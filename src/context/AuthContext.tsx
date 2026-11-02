@@ -174,6 +174,12 @@ export const AuthProvider: React.FC<{
 
       return { success: true };
     } catch (err: any) {
+      if (err?.name === 'AbortError') {
+        return { success: false, error: 'Connection timed out. The server may be waking up from sleep (Render free tier). Please try again in 30 seconds.' };
+      }
+      if (/failed to fetch/i.test(err?.message || '')) {
+        return { success: false, error: 'Unable to reach server. The free-tier backend may be spinning up from sleep (~50s). Please wait a moment and tap again.' };
+      }
       return { success: false, error: err.message || 'Network error connecting to authentication server.' };
     }
   };
@@ -223,6 +229,12 @@ export const AuthProvider: React.FC<{
 
       return { success: true };
     } catch (err: any) {
+      if (err?.name === 'AbortError') {
+        return { success: false, error: 'Connection timed out. The server may be waking up from sleep (Render free tier). Please try again in 30 seconds.' };
+      }
+      if (/failed to fetch/i.test(err?.message || '')) {
+        return { success: false, error: 'Unable to reach server. The free-tier backend may be spinning up from sleep (~50s). Please wait a moment and tap again.' };
+      }
       return { success: false, error: err.message || 'Network error during registration.' };
     }
   };

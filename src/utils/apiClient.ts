@@ -7,7 +7,11 @@
  */
 
 const rawBaseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined) || '';
-export const API_BASE_URL = rawBaseUrl.trim().replace(/\/+$/, '');
+export const API_BASE_URL = rawBaseUrl.trim().replace(/\/+$/, '') || (
+  typeof window !== 'undefined' && window.location.hostname.endsWith('pages.dev')
+    ? 'https://lecturescript-api.onrender.com'
+    : ''
+);
 
 /**
  * Resolves an API path to the full target URL.
@@ -26,6 +30,7 @@ export function getApiUrl(path: string): string {
  * 1. Resolves against VITE_API_BASE_URL
  * 2. Enforces credentials: 'include' for secure cross-origin session cookies
  * 3. Sets default JSON content type headers
+ * 4. Supports a 45-second timeout to accommodate Render free-tier cold starts
  */
 export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
   const url = getApiUrl(path);
@@ -35,9 +40,21 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
     headers.set('Content-Type', 'application/json');
   }
 
-  return fetch(url, {
-    ...options,
-    headers,
-    credentials: 'include',
-  });
+  // Use AbortController if no external signal provided, with 45s timeout for cold starts
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timeoutId = controller ? setTimeout(() => controller.abort(), 45000) : null;
+
+  try {
+    const res = await fetch(url, {
+      ...options,
+      headers,
+      credentials: 'include',
+      signal: options.signal || (controller ? controller.signal : undefined),
+    });
+    return res;
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
 }

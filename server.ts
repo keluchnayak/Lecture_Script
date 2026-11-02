@@ -27,36 +27,49 @@ app.set('trust proxy', 1);
 const allowedOriginsEnv = process.env.ALLOWED_ORIGINS || '';
 const parsedAllowedOrigins = allowedOriginsEnv
   .split(',')
-  .map((o) => o.trim())
+  .map((o) => o.trim().replace(/\/+$/, '').toLowerCase())
   .filter(Boolean);
 
 const isOriginAllowed = (origin: string | undefined): boolean => {
   if (!origin) return true; // allow same-origin, curl, server-to-server, health monitors
-  if (parsedAllowedOrigins.includes(origin)) return true;
-  // Local development ports
-  if (/^http:\/\/localhost(:\d+)?$/.test(origin)) return true;
-  if (/^http:\/\/127\.0\.0\.1(:\d+)?$/.test(origin)) return true;
-  // Cloudflare Pages deployments (*.pages.dev)
-  if (/^https:\/\/[a-zA-Z0-9-]+\.pages\.dev$/.test(origin)) return true;
+  
+  const normOrigin = origin.trim().replace(/\/+$/, '').toLowerCase();
+  if (parsedAllowedOrigins.includes(normOrigin)) return true;
+  
+  // Local development & LAN IP ports for mobile testing
+  if (/^https?:\/\/localhost(:\d+)?$/.test(normOrigin)) return true;
+  if (/^https?:\/\/127\.0\.0\.1(:\d+)?$/.test(normOrigin)) return true;
+  if (/^https?:\/\/192\.168\.\d+\.\d+(:\d+)?$/.test(normOrigin)) return true;
+  if (/^https?:\/\/10\.\d+\.\d+\.\d+(:\d+)?$/.test(normOrigin)) return true;
+  
+  // Cloudflare Pages deployments (production, branch preview, commit preview)
+  // Matches https://lecturescript.pages.dev, https://main.lecturescript.pages.dev, https://hash.lecturescript.pages.dev
+  if (/^https:\/\/([a-zA-Z0-9-_]+\.)*pages\.dev$/i.test(normOrigin)) return true;
+  
+  // Render deployment domains
+  if (/^https:\/\/([a-zA-Z0-9-_]+\.)*onrender\.com$/i.test(normOrigin)) return true;
+  
   return false;
 };
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (isOriginAllowed(origin)) {
-        callback(null, true);
-      } else {
-        console.warn(`[CORS] Blocked request from origin: ${origin}`);
-        callback(new Error(`Origin ${origin} not allowed by CORS`));
-      }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-    exposedHeaders: ['Retry-After'],
-  })
-);
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    if (isOriginAllowed(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`[CORS] Blocked request from origin: ${origin}`);
+      callback(null, false);
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  exposedHeaders: ['Retry-After', 'Set-Cookie'],
+  maxAge: 86400,
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // Cookie parser for secure HttpOnly session tokens
 app.use(cookieParser());
