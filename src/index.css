@@ -1,0 +1,282 @@
+@import "tailwindcss";
+
+/* ──────────────────────────────────────────────
+   Lavender Focus Design System
+   #FFFFFF  – Surface (white)
+   #F7F5FF  – Canvas (pale lavender)
+   #7456E8  – Primary (violet)
+   #242238  – Text (dark navy)
+   #DCD4FF  – Soft accent (light lavender)
+────────────────────────────────────────────── */
+:root {
+  --color-surface:       #FFFFFF;
+  --color-canvas:        #F7F5FF;
+  --color-primary:       #7456E8;
+  --color-primary-dark:  #5E40D4;
+  --color-primary-light: #9B82F3;
+  --color-text:          #242238;
+  --color-text-muted:    #6B6888;
+  --color-accent:        #DCD4FF;
+  --color-accent-mid:    #B8A8FF;
+  --color-border:        #E8E3FF;
+  --color-border-dark:   #C4B8F8;
+}
+
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: radial-gradient(circle at 12% 15%, rgba(220, 212, 255, 0.7) 0%, transparent 45%),
+                radial-gradient(circle at 88% 22%, rgba(206, 192, 255, 0.5) 0%, transparent 42%),
+                radial-gradient(circle at 50% 85%, rgba(235, 228, 255, 0.8) 0%, transparent 55%),
+                linear-gradient(180deg, #F9F7FF 0%, #F4F0FF 50%, #ECE6FF 100%);
+    background-attachment: fixed;
+    color: var(--color-text);
+    min-height: 100vh;
+    @apply antialiased;
+  }
+
+  ::selection {
+    background-color: var(--color-accent);
+    color: var(--color-primary-dark);
+  }
+
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--color-accent-mid); border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--color-primary); }
+}
+
+/* ── Focus Ring ── */
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* ── Glassmorphism & Surface Design System ── */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 
+    0 10px 30px -4px rgba(116, 86, 232, 0.07),
+    0 2px 8px -2px rgba(36, 34, 56, 0.03),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.95);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-panel-elevated {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 
+    0 14px 38px -6px rgba(116, 86, 232, 0.1),
+    0 4px 12px -2px rgba(36, 34, 56, 0.04),
+    inset 0 1px 2px 0 rgba(255, 255, 255, 1);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-panel-elevated:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 20px 45px -8px rgba(116, 86, 232, 0.14),
+    0 6px 16px -2px rgba(36, 34, 56, 0.05),
+    inset 0 1px 2px 0 rgba(255, 255, 255, 1);
+}
+
+/* Note Canvas — Pure High-Yield Clarity with subtle translucent outline */
+.note-sheet {
+  background: #FFFFFF;
+  border: 1px solid rgba(220, 212, 255, 0.6);
+  box-shadow: 
+    0 12px 36px -6px rgba(116, 86, 232, 0.08),
+    0 2px 8px -1px rgba(36, 34, 56, 0.03);
+}
+
+/* Glass interactive pills and controls */
+.glass-pill {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 6px -1px rgba(116, 86, 232, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-pill:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(206, 192, 255, 0.8);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -2px rgba(116, 86, 232, 0.12), inset 0 1px 0 rgba(255, 255, 255, 1);
+}
+
+/* Glass input container */
+.glass-input {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1.5px solid rgba(220, 212, 255, 0.7);
+  box-shadow: inset 0 1px 2px rgba(36, 34, 56, 0.03);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-input:focus-within {
+  background: #FFFFFF;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(116, 86, 232, 0.18), inset 0 1px 2px rgba(36, 34, 56, 0.02);
+}
+
+/* Primary Glass Button */
+.btn-primary {
+  background: linear-gradient(135deg, #7456E8 0%, #8E70FA 100%);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 14px 0 rgba(116, 86, 232, 0.35), inset 0 1px 0 0 rgba(255, 255, 255, 0.3);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-1.5px);
+  box-shadow: 0 8px 22px 0 rgba(116, 86, 232, 0.42), inset 0 1px 0 0 rgba(255, 255, 255, 0.4);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px 0 rgba(116, 86, 232, 0.3);
+}
+
+/* Secondary Glass Button */
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(220, 212, 255, 0.8);
+  color: var(--color-text);
+  box-shadow: 0 2px 6px -1px rgba(116, 86, 232, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #FFFFFF;
+  border-color: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -2px rgba(116, 86, 232, 0.12);
+}
+
+/* Gradient helpers */
+.gradient-primary { background: linear-gradient(135deg, #7456E8 0%, #9B82F3 100%); }
+.gradient-canvas  { background: linear-gradient(160deg, #F7F5FF 0%, #EEE8FF 100%); }
+
+/* Micro-animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-5px); }
+}
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0   rgba(116,86,232,.35); }
+  70%  { box-shadow: 0 0 0 10px rgba(116,86,232,0);  }
+  100% { box-shadow: 0 0 0 0   rgba(116,86,232,0);   }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+.animate-float       { animation: float 3.5s ease-in-out infinite; }
+.animate-pulse-ring  { animation: pulse-ring 2s ease-out infinite; }
+.animate-shimmer {
+  background: linear-gradient(90deg, var(--color-canvas) 25%, var(--color-accent) 50%, var(--color-canvas) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s infinite;
+}
+
+/* Print */
+@media print {
+  body { background: white !important; color: #242238 !important; }
+  .grid, .p-5, .p-4 { break-inside: avoid; }
+}
+
+/* Lofi Study Character Converter Hover & Instant Invisibility */
+.lofi-converter-box {
+  opacity: 0;
+  transform: scale(0.92);
+  pointer-events: none;
+  transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lofi-card:hover .lofi-converter-box:not(.lofi-chosen) {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+.lofi-converter-box.lofi-chosen {
+  opacity: 0 !important;
+  transform: scale(0.92) !important;
+  pointer-events: none !important;
+}
+
+/* ──────────────────────────────────────────────
+   GenZ Aesthetic Flashcards 3D Interactive Flip
+   ────────────────────────────────────────────── */
+.flashcard-perspective {
+  perspective: 1400px;
+}
+
+.flashcard-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: left;
+  transition: transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-style: preserve-3d;
+}
+
+.flashcard-inner.flipped {
+  transform: rotateY(180deg);
+}
+
+.flashcard-face {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  border-radius: 1.5rem;
+}
+
+.flashcard-back {
+  transform: rotateY(180deg);
+}
+
+/* GenZ Glow Gradients */
+.deck-gradient-lavender {
+  background: linear-gradient(135deg, #7456E8 0%, #A489F9 100%);
+}
+.deck-gradient-sunset {
+  background: linear-gradient(135deg, #FF6B8B 0%, #FFA07A 100%);
+}
+.deck-gradient-matcha {
+  background: linear-gradient(135deg, #10B981 0%, #6EE7B7 100%);
+}
+.deck-gradient-cyber {
+  background: linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%);
+}
+.deck-gradient-amber {
+  background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+}
+
+@keyframes celebrateBounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+.animate-celebrate {
+  animation: celebrateBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+
+
