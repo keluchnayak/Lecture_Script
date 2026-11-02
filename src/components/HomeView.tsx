@@ -35,15 +35,13 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, onSelectSample }
 
   const { characterPreference, updateCharacterPreference } = useAuth();
   const character = (characterPreference === 'boy' ? 'boy' : 'girl') as 'girl' | 'boy';
-  const [hasSwitched, setHasSwitched] = useState(false);
 
   const handleSelectCharacter = (selected: 'girl' | 'boy') => {
     updateCharacterPreference(selected);
     try {
       localStorage.setItem('lecturescript_lofi_character', selected);
+      localStorage.setItem('lecturescript_character_preference', selected);
     } catch {}
-    // Instantly hide converter after user changes to desired image
-    setHasSwitched(true);
   };
   return (
     <div className="space-y-8 max-w-5xl mx-auto pb-16">
@@ -155,11 +153,10 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, onSelectSample }
             </div>
           </div>
 
-          {/* Right: Gorgeous Anime Cartoon Lofi Study Illustration with Invisible-on-Select Converter */}
+          {/* Right: Gorgeous Anime Cartoon Lofi Study Illustration with Visible Converter */}
           <div className="lg:col-span-5 flex justify-center items-center">
             <div
               id="lofi-study-card"
-              onMouseLeave={() => setHasSwitched(false)}
               className="lofi-card relative w-full max-w-[340px] aspect-square rounded-3xl overflow-hidden p-2 flex items-center justify-center shadow-xl border transition-all duration-300 hover:scale-[1.02]"
               style={{
                 background: 'linear-gradient(145deg, #F5F1FF 0%, #EAE2FF 100%)',
@@ -180,49 +177,47 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, onSelectSample }
                 loading="eager"
               />
 
-              {/* Converter (User Preference Switcher):
-                  - Completely invisible by default
-                  - Appears gently when hovering over the card
-                  - Disappears / becomes completely invisible immediately once user chooses their desired image
-              */}
+              {/* Character Switcher (Always visible & interactive on mobile & desktop) */}
               <div
                 id="lofi-converter-container"
-                className={`lofi-converter-box absolute top-3.5 right-3.5 z-20 ${
-                  hasSwitched ? 'lofi-chosen' : ''
-                }`}
+                className="lofi-converter-box absolute top-3.5 right-3.5 z-20"
               >
                 <div
-                  className="p-1 rounded-full flex items-center gap-1 shadow-xl border border-white/90"
+                  className="p-1 rounded-full flex items-center gap-1 shadow-lg border border-white/95"
                   style={{
                     background: 'rgba(255, 255, 255, 0.95)',
                     backdropFilter: 'blur(16px)',
-                    boxShadow: '0 8px 24px -2px rgba(116, 86, 232, 0.3)',
+                    boxShadow: '0 8px 24px -2px rgba(116, 86, 232, 0.28)',
                   }}
+                  role="group"
+                  aria-label="Select study character avatar"
                 >
                   <button
+                    type="button"
                     id="lofi-switch-girl"
                     onClick={() => handleSelectCharacter('girl')}
-                    className={`px-2.5 py-1 rounded-full text-[11px] font-bold cursor-pointer transition-all flex items-center gap-1 ${
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 touch-manipulation select-none active:scale-95 ${
                       character === 'girl'
-                        ? 'bg-violet-600 text-white shadow-sm'
-                        : 'text-violet-900/80 hover:text-violet-900 hover:bg-violet-100/60'
+                        ? 'bg-violet-600 text-white shadow-md shadow-violet-500/30'
+                        : 'text-violet-950/70 hover:text-violet-950 hover:bg-violet-100/70'
                     }`}
-                    title="Choose Female Lofi Character"
+                    title="Study with Anime Girl"
                   >
-                    <span>👧</span>
+                    <span className="text-sm">👧</span>
                     <span>Girl</span>
                   </button>
                   <button
+                    type="button"
                     id="lofi-switch-boy"
                     onClick={() => handleSelectCharacter('boy')}
-                    className={`px-2.5 py-1 rounded-full text-[11px] font-bold cursor-pointer transition-all flex items-center gap-1 ${
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 touch-manipulation select-none active:scale-95 ${
                       character === 'boy'
-                        ? 'bg-violet-600 text-white shadow-sm'
-                        : 'text-violet-900/80 hover:text-violet-900 hover:bg-violet-100/60'
+                        ? 'bg-violet-600 text-white shadow-md shadow-violet-500/30'
+                        : 'text-violet-950/70 hover:text-violet-950 hover:bg-violet-100/70'
                     }`}
-                    title="Choose Male Lofi Character"
+                    title="Study with Anime Boy"
                   >
-                    <span>👦</span>
+                    <span className="text-sm">👦</span>
                     <span>Boy</span>
                   </button>
                 </div>
@@ -233,7 +228,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, onSelectSample }
                 type="button"
                 id="lofi-beats-button"
                 onClick={handleLofiBeatsClick}
-                className={`absolute bottom-4 right-4 px-3.5 py-1.5 rounded-full flex items-center gap-2 text-[11px] font-bold shadow-lg border transition-all cursor-pointer hover:scale-105 active:scale-95 ${
+                className={`absolute bottom-3.5 right-3.5 px-3.5 py-1.5 rounded-full flex items-center gap-2 text-[11px] font-bold shadow-lg border transition-all cursor-pointer hover:scale-105 active:scale-95 touch-manipulation ${
                   isPlaying && activePreset === 'night-lofi'
                     ? 'bg-violet-600 text-white border-violet-400 ring-2 ring-violet-300/60 shadow-violet-500/30'
                     : 'bg-white/95 text-violet-900 border-white/80 hover:bg-white'

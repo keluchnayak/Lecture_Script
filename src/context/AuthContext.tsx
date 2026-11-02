@@ -54,7 +54,13 @@ export const AuthProvider: React.FC<{
 }> = ({ children, onHydrateNotes, onHydrateDecks }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoadingSession, setIsLoadingSession] = useState(true);
-  const [characterPreference, setCharacterPreference] = useState<string>('girl');
+  const [characterPreference, setCharacterPreference] = useState<string>(() => {
+    try {
+      return localStorage.getItem('lecturescript_character_preference') || localStorage.getItem('lecturescript_lofi_character') || 'girl';
+    } catch {
+      return 'girl';
+    }
+  });
   const [syncState, setSyncState] = useState<{ status: SyncState; message: string }>({
     status: 'synced',
     message: 'Synced with Neon',

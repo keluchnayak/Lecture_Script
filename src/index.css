@@ -198,24 +198,16 @@
   .grid, .p-5, .p-4 { break-inside: avoid; }
 }
 
-/* Lofi Study Character Converter Hover & Instant Invisibility */
+/* Lofi Study Character Switcher (Always visible & interactive on mobile & desktop) */
 .lofi-converter-box {
-  opacity: 0;
-  transform: scale(0.92);
-  pointer-events: none;
-  transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.lofi-card:hover .lofi-converter-box:not(.lofi-chosen) {
   opacity: 1;
   transform: scale(1);
   pointer-events: auto;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
 }
 
-.lofi-converter-box.lofi-chosen {
-  opacity: 0 !important;
-  transform: scale(0.92) !important;
-  pointer-events: none !important;
+.lofi-converter-box:hover {
+  transform: scale(1.02);
 }
 
 /* ──────────────────────────────────────────────
