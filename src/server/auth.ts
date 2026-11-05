@@ -193,12 +193,14 @@ const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
 export function createRateLimiter(maxRequests = 10, windowMs = 15 * 60 * 1000) {
   return (req: Request, res: Response, next: NextFunction): void => {
+    const user = (req as any).user;
     const ip = req.ip || req.socket.remoteAddress || 'unknown';
+    const key = user?.id ? `user_${user.id}` : `ip_${ip}`;
     const now = Date.now();
-    const entry = rateLimitMap.get(ip);
+    const entry = rateLimitMap.get(key);
 
     if (!entry || now > entry.resetAt) {
-      rateLimitMap.set(ip, { count: 1, resetAt: now + windowMs });
+      rateLimitMap.set(key, { count: 1, resetAt: now + windowMs });
       return next();
     }
 

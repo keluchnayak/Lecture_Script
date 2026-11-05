@@ -94,10 +94,14 @@ export const TranscriptInput: React.FC<Props> = ({
       }
     };
     reader.readAsText(file);
+    // Reset file input value so selecting the same file triggers onChange
+    e.target.value = '';
   };
 
   const cleanSubtitleTimestamps = (text: string) => {
     return text
+      .replace(/^\uFEFF/, '') // Strip UTF-8 BOM if present
+      .replace(/\r\n/g, '\n') // Normalize Windows line breaks
       .replace(/^WEBVTT.*$/gm, '')
       .replace(/^\d+\s*$/gm, '')
       .replace(/^\d{2}:\d{2}:\d{2}[.,]\d{3}\s*-->\s*\d{2}:\d{2}:\d{2}[.,]\d{3}.*$/gm, '')

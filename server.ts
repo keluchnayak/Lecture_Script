@@ -87,8 +87,8 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/sync', syncRoutes);
 
-// Rate limiter for expensive AI endpoints: 15 calls per 5 minutes per IP
-const aiRateLimiter = createRateLimiter(15, 5 * 60 * 1000);
+// Rate limiter for expensive AI endpoints: 30 calls per 5 minutes per user/IP
+const aiRateLimiter = createRateLimiter(30, 5 * 60 * 1000);
 
 // Initialize Gemini Client
 const ai = new GoogleGenAI({
@@ -270,127 +270,137 @@ async function generateNotesWithRetry(
   systemInstruction: string,
   clientInstance: GoogleGenAI = ai
 ): Promise<{ text: string; modelUsed: string }> {
-  // gemini-2.5-flash is ultra-fast (~2s), with gemini-3.1-flash-lite as resilient fallback
-  const candidateModels = ['gemini-2.5-flash', 'gemini-3.1-flash-lite'];
+  // Ordered by response speed and availability:
+  // 1. gemini-2.5-flash (with thinkingBudget: 0 for instant JSON output in ~5s)
+  // 2. gemini-3.1-flash-lite (fast 2s fallback)
+  // 3. gemini-2.5-flash-lite (resilient additional fallback)
+  const candidateModels = ['gemini-2.5-flash', 'gemini-3.1-flash-lite', 'gemini-2.5-flash-lite'];
   let lastError: any = null;
 
   for (const model of candidateModels) {
     for (let attempt = 1; attempt <= 2; attempt++) {
       try {
         console.log(`[Gemini API] Requesting ${model} (attempt ${attempt})...`);
+        const generationConfig: any = {
+          systemInstruction,
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              title: { type: Type.STRING },
+              subject: { type: Type.STRING },
+              courseCodeOrTopic: { type: Type.STRING },
+              lectureDate: { type: Type.STRING },
+              overview: { type: Type.STRING },
+              modules: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    topic: { type: Type.STRING },
+                    subheading: { type: Type.STRING },
+                    coreExplanation: { type: Type.STRING },
+                    keyPoints: {
+                      type: Type.ARRAY,
+                      items: { type: Type.STRING },
+                    },
+                    exampleOrCaseStudy: { type: Type.STRING },
+                    importance: { type: Type.STRING },
+                  },
+                  required: ['topic', 'subheading', 'coreExplanation', 'keyPoints'],
+                },
+              },
+              cornellSections: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    cue: { type: Type.STRING },
+                    notes: {
+                      type: Type.ARRAY,
+                      items: { type: Type.STRING },
+                    },
+                    tag: { type: Type.STRING },
+                  },
+                  required: ['cue', 'notes'],
+                },
+              },
+              keyFormulasOrDefinitions: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    term: { type: Type.STRING },
+                    formulaOrDefinition: { type: Type.STRING },
+                    context: { type: Type.STRING },
+                    examSignificance: { type: Type.STRING },
+                  },
+                  required: ['term', 'formulaOrDefinition'],
+                },
+              },
+              comparisonAnalysis: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    aspect: { type: Type.STRING },
+                    conceptA: { type: Type.STRING },
+                    conceptB: { type: Type.STRING },
+                    keyDifference: { type: Type.STRING },
+                  },
+                  required: ['aspect', 'conceptA', 'conceptB', 'keyDifference'],
+                },
+              },
+              examTrapsAndAlerts: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    topic: { type: Type.STRING },
+                    trapDescription: { type: Type.STRING },
+                    howToAnswerInExam: { type: Type.STRING },
+                  },
+                  required: ['topic', 'trapDescription', 'howToAnswerInExam'],
+                },
+              },
+              activeRecallQuestions: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    question: { type: Type.STRING },
+                    answerKey: { type: Type.STRING },
+                  },
+                  required: ['question', 'answerKey'],
+                },
+              },
+              diagramsToDraw: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    title: { type: Type.STRING },
+                    instruction: { type: Type.STRING },
+                    asciiSketch: { type: Type.STRING },
+                  },
+                  required: ['title', 'instruction'],
+                },
+              },
+              bottomSummary: { type: Type.STRING },
+            },
+            required: ['title', 'overview', 'modules', 'cornellSections', 'bottomSummary'],
+          },
+        };
+
+        // Bypass reasoning thinking tokens on attempt 1 for 4x faster response time
+        if (attempt === 1) {
+          generationConfig.thinkingConfig = { thinkingBudget: 0 };
+        }
+
         const response = await clientInstance.models.generateContent({
           model,
           contents: prompt,
-          config: {
-            systemInstruction,
-            responseMimeType: 'application/json',
-            responseSchema: {
-              type: Type.OBJECT,
-              properties: {
-                title: { type: Type.STRING },
-                subject: { type: Type.STRING },
-                courseCodeOrTopic: { type: Type.STRING },
-                lectureDate: { type: Type.STRING },
-                overview: { type: Type.STRING },
-                modules: {
-                  type: Type.ARRAY,
-                  items: {
-                    type: Type.OBJECT,
-                    properties: {
-                      topic: { type: Type.STRING },
-                      subheading: { type: Type.STRING },
-                      coreExplanation: { type: Type.STRING },
-                      keyPoints: {
-                        type: Type.ARRAY,
-                        items: { type: Type.STRING },
-                      },
-                      exampleOrCaseStudy: { type: Type.STRING },
-                      importance: { type: Type.STRING },
-                    },
-                    required: ['topic', 'subheading', 'coreExplanation', 'keyPoints'],
-                  },
-                },
-                cornellSections: {
-                  type: Type.ARRAY,
-                  items: {
-                    type: Type.OBJECT,
-                    properties: {
-                      cue: { type: Type.STRING },
-                      notes: {
-                        type: Type.ARRAY,
-                        items: { type: Type.STRING },
-                      },
-                      tag: { type: Type.STRING },
-                    },
-                    required: ['cue', 'notes'],
-                  },
-                },
-                keyFormulasOrDefinitions: {
-                  type: Type.ARRAY,
-                  items: {
-                    type: Type.OBJECT,
-                    properties: {
-                      term: { type: Type.STRING },
-                      formulaOrDefinition: { type: Type.STRING },
-                      context: { type: Type.STRING },
-                      examSignificance: { type: Type.STRING },
-                    },
-                    required: ['term', 'formulaOrDefinition'],
-                  },
-                },
-                comparisonAnalysis: {
-                  type: Type.ARRAY,
-                  items: {
-                    type: Type.OBJECT,
-                    properties: {
-                      aspect: { type: Type.STRING },
-                      conceptA: { type: Type.STRING },
-                      conceptB: { type: Type.STRING },
-                      keyDifference: { type: Type.STRING },
-                    },
-                    required: ['aspect', 'conceptA', 'conceptB', 'keyDifference'],
-                  },
-                },
-                examTrapsAndAlerts: {
-                  type: Type.ARRAY,
-                  items: {
-                    type: Type.OBJECT,
-                    properties: {
-                      topic: { type: Type.STRING },
-                      trapDescription: { type: Type.STRING },
-                      howToAnswerInExam: { type: Type.STRING },
-                    },
-                    required: ['topic', 'trapDescription', 'howToAnswerInExam'],
-                  },
-                },
-                activeRecallQuestions: {
-                  type: Type.ARRAY,
-                  items: {
-                    type: Type.OBJECT,
-                    properties: {
-                      question: { type: Type.STRING },
-                      answerKey: { type: Type.STRING },
-                    },
-                    required: ['question', 'answerKey'],
-                  },
-                },
-                diagramsToDraw: {
-                  type: Type.ARRAY,
-                  items: {
-                    type: Type.OBJECT,
-                    properties: {
-                      title: { type: Type.STRING },
-                      instruction: { type: Type.STRING },
-                      asciiSketch: { type: Type.STRING },
-                    },
-                    required: ['title', 'instruction'],
-                  },
-                },
-                bottomSummary: { type: Type.STRING },
-              },
-              required: ['title', 'overview', 'modules', 'cornellSections', 'bottomSummary'],
-            },
-          },
+          config: generationConfig,
         });
 
         if (response.text) {
@@ -401,7 +411,7 @@ async function generateNotesWithRetry(
         lastError = err;
         console.warn(`[Gemini API] ${model} attempt ${attempt} failed:`, err.message || err);
         // Backoff delay before retry
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+        await new Promise((resolve) => setTimeout(resolve, 800));
       }
     }
   }
@@ -428,7 +438,13 @@ app.post('/api/generate-notes', aiRateLimiter, async (req, res) => {
       });
     }
 
-    const wordCount = transcript.trim().split(/\s+/).length;
+    // Keep transcript within optimal context size (80,000 chars is ~15,000 words, >2 hours lecture)
+    const processedTranscript =
+      transcript.length > 80000
+        ? transcript.slice(0, 80000) + '\n\n[Transcript excerpted to 80,000 characters for optimal AI performance]'
+        : transcript;
+
+    const wordCount = processedTranscript.trim().split(/\s+/).length;
     const estMinutes = Math.max(1, Math.round(wordCount / 140));
 
     const effectiveApiKey = userApiKey || process.env.GEMINI_API_KEY;
@@ -479,7 +495,7 @@ INCLUDE EXAM ALERTS & TRAPS: ${includeExamCues}
 TRANSCRIPT METRICS: ~${wordCount} words (~${estMinutes} lecture minutes)
 
 TRANSCRIPT TEXT:
-${transcript}
+${processedTranscript}
 ---
 
 Generate the complete, in-depth college study notes according to the JSON schema with maximum academic depth.`;
@@ -594,7 +610,7 @@ Each card must have:
     const systemInstruction = `You are a Gen-Z master study coach and top academic scholar.
 Your goal is to turn academic texts, lecture notes, and transcripts into razor-sharp, memorable, high-yield study flashcards for active recall. Make each question prompt deep understanding, not shallow trivia. Ensure answers are crystal clear, educational, and concise.`;
 
-    const candidateModels = ['gemini-2.5-flash', 'gemini-3.1-flash-lite'];
+    const candidateModels = ['gemini-2.5-flash', 'gemini-3.1-flash-lite', 'gemini-2.5-flash-lite'];
     let parsedCards: any = null;
 
     for (const model of candidateModels) {
@@ -605,6 +621,7 @@ Your goal is to turn academic texts, lecture notes, and transcripts into razor-s
           config: {
             systemInstruction,
             responseMimeType: 'application/json',
+            thinkingConfig: { thinkingBudget: 0 },
             responseSchema: {
               type: Type.OBJECT,
               properties: {

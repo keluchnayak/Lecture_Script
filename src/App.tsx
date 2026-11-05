@@ -167,6 +167,7 @@ export default function App() {
     try {
       const response = await apiFetch('/api/generate-notes', {
         method: 'POST',
+        timeoutMs: 180000, // 3 minutes timeout for long transcripts & Render wake-up
         body: JSON.stringify({
           ...params,
           userApiKey: apiKey || undefined,
@@ -175,6 +176,9 @@ export default function App() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        if (response.status === 429) {
+          throw new Error(errorData.error || 'Too many attempts. Please wait a couple minutes before generating again.');
+        }
         throw new Error(errorData.error || `Server responded with status ${response.status}`);
       }
 
@@ -183,7 +187,11 @@ export default function App() {
       saveNoteToLibrary(data);
     } catch (err: any) {
       console.error('Failed to generate notes:', err);
-      setError(err.message || 'Something went wrong while generating notes. Please try again.');
+      let message = err?.message || 'Something went wrong while generating notes. Please try again.';
+      if (err?.name === 'AbortError' || err?.name === 'TimeoutError' || /aborted|timeout/i.test(message)) {
+        message = 'The request took longer than expected to process. The server may be waking up or processing a very long lecture transcript. Please try again or test with a shorter section.';
+      }
+      setError(message);
     } finally {
       setIsLoading(false);
     }
